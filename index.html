@@ -17,28 +17,22 @@
 <h1>HTML Pages</h1>
 <ul id="list"></ul>
 <script>
-fetch('/_list/')
-  .then(r => r.text())
-  .then(html => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+fetch('/files.json')
+  .then(r => r.json())
+  .then(files => {
     const list = document.getElementById('list');
-    let count = 0;
-    doc.querySelectorAll('a').forEach(a => {
-      const href = a.getAttribute('href');
-      if (href && href.endsWith('.html') && href !== 'index.html' && href !== '../') {
-        const li = document.createElement('li');
-        const link = document.createElement('a');
-        link.href = '/' + href;
-        link.textContent = decodeURIComponent(href.replace('.html', ''));
-        li.appendChild(link);
-        list.appendChild(li);
-        count++;
-      }
-    });
-    if (count === 0) {
+    if (!files || files.length === 0) {
       list.innerHTML = '<li>No HTML files found.</li>';
+      return;
     }
+    files.forEach(href => {
+      const li = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = '/' + href;
+      link.textContent = decodeURIComponent(href.replace('.html', ''));
+      li.appendChild(link);
+      list.appendChild(li);
+    });
   })
   .catch(() => {
     document.getElementById('list').innerHTML = '<li><a href="price.html">price</a></li>';
