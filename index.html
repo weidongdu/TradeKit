@@ -8,99 +8,145 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: #fafafa;
+    background: #f0f1f3;
     color: #1d1d1f;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
+  }
+  header {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    padding: 64px 24px 96px;
+    text-align: center;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: #f0f1f3;
+    border-radius: 24px 24px 0 0;
+  }
+  header h1 {
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -.5px;
+    margin-bottom: 8px;
+  }
+  header p {
+    color: rgba(255,255,255,.55);
+    font-size: .92rem;
+    line-height: 1.5;
+  }
+  .cards {
+    max-width: 680px;
+    margin: -56px auto 64px;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    transition: transform .2s, box-shadow .25s;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  }
+  .card-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #4f6ef7, #6c8cff);
+  }
+  .card-body {
+    padding: 24px 24px 20px;
+    flex: 1;
     display: flex;
     flex-direction: column;
   }
-  main {
-    flex: 1;
-    max-width: 640px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 96px 24px 80px;
-  }
-  h1 {
-    font-size: 2.2rem;
-    font-weight: 700;
-    letter-spacing: -.6px;
+  .card-title {
+    font-size: 1.08rem;
+    font-weight: 600;
+    line-height: 1.4;
     margin-bottom: 8px;
   }
-  .intro {
+  .card-desc {
+    font-size: .85rem;
     color: #86868b;
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-bottom: 40px;
-  }
-  .item {
-    display: block;
-    padding: 20px 24px;
-    margin-bottom: 12px;
-    border-radius: 12px;
-    background: #fff;
-    text-decoration: none;
-    color: inherit;
-    border: 1px solid #f0f0f0;
-    transition: box-shadow .2s, border-color .2s;
-  }
-  .item:hover {
-    border-color: #d2d2d7;
-    box-shadow: 0 2px 12px rgba(0,0,0,.05);
-  }
-  .item-title {
-    font-size: 1.05rem;
-    font-weight: 600;
-    margin-bottom: 6px;
-    line-height: 1.4;
-  }
-  .item:hover .item-title { color: #0071e3; }
-  .item-desc {
-    font-size: .88rem;
-    color: #86868b;
-    line-height: 1.5;
-    margin-bottom: 10px;
+    line-height: 1.55;
+    flex: 1;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    margin-bottom: 16px;
   }
-  .item-meta {
-    font-size: .75rem;
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: .78rem;
     color: #aeaeb2;
+    padding-top: 14px;
+    border-top: 1px solid #f5f5f5;
   }
-  .item-meta span + span::before {
-    content: ' · ';
+  .card-arrow {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f5f6f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #86868b;
+    font-size: .85rem;
+    transition: background .2s, color .2s;
+  }
+  .card:hover .card-arrow {
+    background: #4f6ef7;
+    color: #fff;
   }
   .spinner {
     text-align: center;
-    padding: 64px 0;
+    padding: 80px 0;
     color: #aeaeb2;
     font-size: .88rem;
   }
-  footer {
-    text-align: center;
-    padding: 0 24px 32px;
-    font-size: .78rem;
-    color: #aeaeb2;
+  @media (min-width: 560px) {
+    .cards { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 480px) {
-    main { padding: 56px 16px 64px; }
-    h1 { font-size: 1.7rem; }
-    .item { padding: 16px 18px; }
+    header { padding: 48px 20px 80px; }
+    header h1 { font-size: 1.6rem; }
+    .cards { margin-top: -44px; gap: 12px; padding: 0 16px; }
+    .card-body { padding: 18px 18px 16px; }
   }
 </style>
 </head>
 <body>
-<main>
+<header>
   <h1>Works</h1>
-  <p class="intro">A collection of small tools and experiments.</p>
+  <p>A collection of small tools and experiments.</p>
+</header>
+<div class="cards" id="list">
   <div class="spinner" id="spinner">Loading…</div>
-  <div id="list"></div>
-</main>
-<footer>&copy; 2026</footer>
+</div>
 <script>
+const COLORS = ['#4f6ef7','#e11d8f','#16a34a','#d97706','#7c3aed','#0284c7','#e11d48','#15803d'];
+
 function formatDate(ts) {
   return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
@@ -111,29 +157,28 @@ function esc(s) {
   return d.innerHTML;
 }
 
-function getDesc(f) {
-  return f.desc || '';
-}
-
 fetch('/files.json')
   .then(r => { if (!r.ok) throw new Error(); return r.json(); })
   .then(files => {
-    document.getElementById('spinner').style.display = 'none';
     const list = document.getElementById('list');
-    files.forEach(f => {
+    list.innerHTML = '';
+    files.forEach((f, i) => {
       const a = document.createElement('a');
-      a.className = 'item';
+      a.className = 'card';
       a.href = '/' + f.name;
-      const desc = getDesc(f);
-      a.innerHTML = '<div class="item-title">' + esc(f.title) + '</div>'
-        + (desc ? '<div class="item-desc">' + esc(desc) + '</div>' : '')
-        + '<div class="item-meta"><span>' + esc(f.name) + '</span><span>' + formatDate(f.modified) + '</span></div>';
+      const desc = f.desc || '';
+      a.innerHTML = '<div class="card-bar" style="background:linear-gradient(90deg,' + COLORS[i % COLORS.length] + ',' + COLORS[(i + 1) % COLORS.length] + ')"></div>'
+        + '<div class="card-body">'
+        + '<div class="card-title">' + esc(f.title) + '</div>'
+        + (desc ? '<div class="card-desc">' + esc(desc) + '</div>' : '<div class="card-desc" style="opacity:.5;">—</div>')
+        + '<div class="card-footer"><span>' + formatDate(f.modified) + '</span><div class="card-arrow">→</div></div>'
+        + '</div>';
       list.appendChild(a);
     });
   })
   .catch(() => {
-    document.getElementById('spinner').style.display = 'none';
-    document.getElementById('list').innerHTML = '<div style="text-align:center;padding:48px 0;color:#86868b;">Failed to load.<br><a href="price.html" style="color:#0071e3;">Go to price →</a></div>';
+    document.getElementById('spinner').textContent = '';
+    document.getElementById('list').innerHTML = '<div style="text-align:center;padding:48px 0;color:#86868b;">Failed to load.<br><a href="price.html" style="color:#4f6ef7;">Go to price →</a></div>';
   });
 </script>
 </body>
