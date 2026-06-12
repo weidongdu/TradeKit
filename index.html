@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Index</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 60px auto; padding: 0 20px; }
+  h1 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+  ul { list-style: none; padding: 0; }
+  li { margin: 12px 0; }
+  a { color: #0366d6; text-decoration: none; font-size: 18px; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<h1>HTML Pages</h1>
+<ul id="list"></ul>
+<script>
+fetch('/_list/')
+  .then(r => r.text())
+  .then(html => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const list = document.getElementById('list');
+    let count = 0;
+    doc.querySelectorAll('a').forEach(a => {
+      const href = a.getAttribute('href');
+      if (href && href.endsWith('.html') && href !== 'index.html' && href !== '../') {
+        const li = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = '/' + href;
+        link.textContent = decodeURIComponent(href.replace('.html', ''));
+        li.appendChild(link);
+        list.appendChild(li);
+        count++;
+      }
+    });
+    if (count === 0) {
+      list.innerHTML = '<li>No HTML files found.</li>';
+    }
+  })
+  .catch(() => {
+    document.getElementById('list').innerHTML = '<li><a href="price.html">price</a></li>';
+  });
+</script>
+</body>
+</html>

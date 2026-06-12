@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>持仓成本调整计算器 · 整数股版</title>
+    <style>
+        :root {
+            --bg: #f5f6f8;
+            --card-bg: #ffffff;
+            --primary: #4f6ef7;
+            --primary-hover: #3b54e0;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --text: #2c3e50;
+            --text-secondary: #5a6c7d;
+            --border: #e2e8f0;
+            --input-bg: #f8fafc;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.05);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #e8ecf1 0%, #dce2e8 30%, #eef1f5 60%, #e4e9f0 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::before {
+            top: -180px; right: -120px;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(79,110,247,0.06) 0%, transparent 70%);
+        }
+        body::after {
+            bottom: -150px; left: -100px;
+            width: 450px; height: 450px;
+            background: radial-gradient(circle, rgba(39,174,96,0.05) 0%, transparent 70%);
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 680px;
+        }
+        .main-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            padding: 32px 28px 28px;
+            transition: var(--transition);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .header .icon-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px; height: 52px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #4f6ef7 0%, #6c8cff 100%);
+            margin-bottom: 14px;
+            box-shadow: 0 6px 18px rgba(79,110,247,0.3);
+        }
+        .header .icon-wrapper svg {
+            width: 26px; height: 26px;
+            fill: none; stroke: #fff;
+            stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .header h1 {
+            font-size: 1.55rem; font-weight: 700;
+            color: var(--text); letter-spacing: -0.3px;
+            margin: 0 0 4px;
+        }
+        .header .subtitle {
+            font-size: 0.875rem; color: var(--text-secondary);
+            font-weight: 400;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        @media (max-width: 500px) {
+            .form-grid { grid-template-columns: 1fr; gap: 12px; }
+            .main-card { padding: 24px 18px 20px; border-radius: 16px; }
+            .header h1 { font-size: 1.3rem; }
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label {
+            font-size: 0.82rem; font-weight: 600;
+            color: var(--text-secondary); letter-spacing: 0.2px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .label-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            display: inline-block; flex-shrink: 0;
+        }
+        .dot-cost { background: #f39c12; }
+        .dot-qty { background: #4f6ef7; }
+        .dot-price { background: #27ae60; }
+        .dot-target { background: #e74c3c; }
+        .input-row {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--input-bg);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0 14px; min-height: 46px;
+            transition: var(--transition);
+        }
+        .input-row:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79,110,247,0.08);
+            background: #fff;
+        }
+        .input-row input {
+            flex: 1; border: none; background: transparent;
+            font-size: 1rem; font-weight: 500;
+            color: var(--text); outline: none;
+            padding: 10px 0; min-width: 0;
+            font-family: inherit; letter-spacing: 0.1px;
+        }
+        .input-row input::placeholder { color: #bcc4cd; font-weight: 400; }
+        .input-row .unit-label {
+            font-size: 0.85rem; font-weight: 600;
+            color: var(--text-secondary); white-space: nowrap;
+            flex-shrink: 0; user-select: none;
+        }
+        .input-row select {
+            border: none; background: transparent;
+            font-size: 0.85rem; font-weight: 600;
+            color: var(--text-secondary); outline: none;
+            cursor: pointer; font-family: inherit;
+            padding: 4px 2px; flex-shrink: 0;
+        }
+        .lot-size-row {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.8rem; color: var(--text-secondary);
+            margin-top: 2px; margin-bottom: 12px; flex-wrap: wrap;
+        }
+        .lot-size-row input {
+            width: 70px; border: 1.5px solid var(--border);
+            border-radius: 8px; padding: 7px 10px;
+            font-size: 0.9rem; font-weight: 500; text-align: center;
+            background: var(--input-bg); font-family: inherit;
+            transition: var(--transition); color: var(--text);
+        }
+        .lot-size-row input:focus {
+            border-color: var(--primary); outline: none;
+            box-shadow: 0 0 0 3px rgba(79,110,247,0.06);
+            background: #fff;
+        }
+        .lot-size-row .hint { color: #94a3b8; font-size: 0.75rem; }
+        .btn-calculate {
+            width: 100%; padding: 13px 20px;
+            background: linear-gradient(135deg, #4f6ef7 0%, #5b7bf8 100%);
+            color: #fff; border: none;
+            border-radius: var(--radius-sm);
+            font-size: 1rem; font-weight: 600;
+            cursor: pointer; letter-spacing: 0.3px;
+            transition: var(--transition); font-family: inherit;
+            box-shadow: 0 4px 14px rgba(79,110,247,0.3);
+            margin-top: 6px;
+        }
+        .btn-calculate:hover {
+            background: linear-gradient(135deg, #3f5de0 0%, #4a6aee 100%);
+            box-shadow: 0 6px 20px rgba(79,110,247,0.4);
+            transform: translateY(-1px);
+        }
+        .btn-calculate:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(79,110,247,0.25); }
+        .btn-calculate:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+        .result-area {
+            margin-top: 22px; display: none;
+            animation: fadeSlideIn 0.35s ease-out;
+        }
+        .result-area.visible { display: block; }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .summary-row {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 10px; margin-bottom: 16px;
+        }
+        @media (max-width: 500px) { .summary-row { grid-template-columns: 1fr 1fr; gap: 8px; } }
+        .summary-item {
+            background: #f8fafc; border-radius: var(--radius-sm);
+            padding: 14px 12px; text-align: center;
+            border: 1px solid var(--border);
+        }
+        .summary-item .s-val { font-size: 1.2rem; font-weight: 700; color: var(--text); letter-spacing: -0.2px; }
+        .summary-item .s-label { font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; font-weight: 500; }
+        .summary-item.profit .s-val { color: var(--success); }
+        .summary-item.loss .s-val { color: var(--danger); }
+        .action-card {
+            background: linear-gradient(135deg, #fefdf7 0%, #fffef9 100%);
+            border: 1.5px solid #f0e6c8;
+            border-radius: var(--radius);
+            padding: 20px 18px;
+            margin-bottom: 14px;
+        }
+        .action-card .action-title {
+            font-size: 0.8rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: #b0903a; margin-bottom: 10px;
+        }
+        .action-card .action-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .action-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border-radius: 24px;
+            font-weight: 700; font-size: 0.95rem; letter-spacing: 0.2px;
+        }
+        .badge-sell { background: #fef2f2; color: #c0392b; border: 1.5px solid #fecaca; }
+        .badge-buy { background: #ecfdf5; color: #1e7e4f; border: 1.5px solid #a7f3d0; }
+        .badge-none { background: #f1f5f9; color: #64748b; border: 1.5px solid #e2e8f0; }
+        .action-detail { font-size: 0.9rem; color: var(--text); font-weight: 500; line-height: 1.5; }
+        .action-detail strong { font-weight: 700; }
+        .preview-card {
+            background: #f8fafc; border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 16px 18px;
+            margin-bottom: 10px;
+        }
+        .preview-card h3 {
+            font-size: 0.82rem; font-weight: 700;
+            color: var(--text-secondary); letter-spacing: 0.4px;
+            margin-bottom: 10px; text-transform: uppercase;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+        .preview-item {
+            background: #fff; border-radius: 8px;
+            padding: 11px 12px; border: 1px solid #eef1f5;
+        }
+        .preview-item .pv-label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 0.3px; }
+        .preview-item .pv-val { font-size: 1.05rem; font-weight: 700; color: var(--text); margin-top: 2px; }
+        .preview-item .pv-val.highlight { color: var(--primary); font-size: 1.15rem; }
+        .note-bar {
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 12px 14px; border-radius: 10px;
+            font-size: 0.8rem; line-height: 1.5;
+            margin-top: 8px; font-weight: 500;
+        }
+        .note-warning { background: #fffdf5; border: 1px solid #fdebb3; color: #8b6d20; }
+        .note-info { background: #f5f9ff; border: 1px solid #d0dffc; color: #3b5998; }
+        .note-bar svg { flex-shrink: 0; margin-top: 1px; }
+        .options-row {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 12px; margin: 16px 0;
+        }
+        @media (max-width: 500px) { .options-row { grid-template-columns: 1fr; } }
+        .option-card {
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            border: 1.5px solid var(--border);
+            background: #fafbfc;
+        }
+        .option-card.better {
+            border-color: var(--primary);
+            background: #f5f7ff;
+            box-shadow: 0 0 0 2px rgba(79,110,247,0.08);
+        }
+        .option-card .opt-label {
+            font-size: 0.72rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .option-card.better .opt-label { color: var(--primary); }
+        .option-card .opt-main { font-size: 0.95rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+        .option-card .opt-detail { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+        @media (max-width: 420px) {
+            .action-main { flex-direction: column; align-items: flex-start; }
+            .preview-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-card">
+            <div class="header">
+                <div class="icon-wrapper">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="2" y="4" width="20" height="16" rx="3" />
+                        <line x1="8" y1="10" x2="16" y2="10" />
+                        <line x1="8" y1="14" x2="13" y2="14" />
+                        <circle cx="17" cy="14" r="2.5" />
+                    </svg>
+                </div>
+                <h1>持仓成本调整计算器</h1>
+                <p class="subtitle">整数手数模式 · 寻找最接近目标成本价的整数操作</p>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label><span class="label-dot dot-cost"></span> 成本价（元）</label>
+                    <div class="input-row">
+                        <input type="number" id="costPrice" placeholder="例如 10" step="any" min="0.01" autocomplete="off">
+                        <span class="unit-label">元/股</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><span class="label-dot dot-qty"></span> 持有数量</label>
+                    <div class="input-row">
+                        <input type="number" id="quantity" placeholder="例如 10" step="1" min="1" autocomplete="off">
+                        <span class="unit-label">手</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><span class="label-dot dot-price"></span> 现价（元）</label>
+                    <div class="input-row">
+                        <input type="number" id="currentPrice" placeholder="例如 12" step="any" min="0.01" autocomplete="off">
+                        <span class="unit-label">元/股</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><span class="label-dot dot-target"></span> 目标成本价（元）</label>
+                    <div class="input-row">
+                        <input type="number" id="targetPrice" placeholder="例如 9" step="any" min="0.01" autocomplete="off">
+                        <span class="unit-label">元/股</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-calculate" id="btnCalc" type="button">📊 开始计算</button>
+
+            <div class="result-area" id="resultArea">
+                <div class="summary-row" id="summaryRow"></div>
+                <div class="action-card" id="actionCard"></div>
+                <div id="optionsArea"></div>
+                <div class="preview-card" id="previewCard"></div>
+                <div id="noteArea"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const costPriceInput = document.getElementById('costPrice');
+            const quantityInput = document.getElementById('quantity');
+            const currentPriceInput = document.getElementById('currentPrice');
+            const targetPriceInput = document.getElementById('targetPrice');
+            const btnCalc = document.getElementById('btnCalc');
+            const resultArea = document.getElementById('resultArea');
+            const summaryRow = document.getElementById('summaryRow');
+            const actionCard = document.getElementById('actionCard');
+            const previewCard = document.getElementById('previewCard');
+            const noteArea = document.getElementById('noteArea');
+            const optionsArea = document.getElementById('optionsArea');
+
+            const LOT_SIZE = 100;
+
+            function getTotalShares() {
+                const qty = parseFloat(quantityInput.value);
+                if (isNaN(qty) || qty <= 0 || !Number.isInteger(qty)) return NaN;
+                return qty * LOT_SIZE;
+            }
+
+            function fmtMoney(n) {
+                if (isNaN(n) || !isFinite(n)) return '—';
+                return Number(n).toFixed(2);
+            }
+
+            function fmtShares(n) {
+                if (isNaN(n) || !isFinite(n)) return '—';
+                return Math.round(n).toString();
+            }
+
+            function fmtLots(shares, lotSize) {
+                const lots = shares / lotSize;
+                if (Math.abs(lots - Math.round(lots)) < 0.0001) {
+                    return Math.round(lots).toString();
+                }
+                return lots.toFixed(4);
+            }
+
+            function computeTradeResult(shares, isSell, totalShares, totalCost, currentPrice) {
+                let newShar, newTotalCostVal;
+                if (isSell) {
+                    newShar = totalShares - shares;
+                    newTotalCostVal = totalCost - shares * currentPrice;
+                } else {
+                    newShar = totalShares + shares;
+                    newTotalCostVal = totalCost + shares * currentPrice;
+                }
+                const newCP = newShar > 0 ? newTotalCostVal / newShar : 0;
+                return {
+                    lots: Math.round(shares / 100),
+                    shares,
+                    isSell,
+                    newCostPrice: newCP,
+                    newShares: newShar,
+                    newTotalCost: newTotalCostVal,
+                    tradeAmount: shares * currentPrice
+                };
+            }
+
+            let isInitialCalc = true;
+
+            function calculate() {
+                const costPrice = parseFloat(costPriceInput.value);
+                const totalShares = getTotalShares();
+                const currentPrice = parseFloat(currentPriceInput.value);
+                const targetPrice = parseFloat(targetPriceInput.value);
+
+                const errors = [];
+                if (isNaN(costPrice) || costPrice <= 0) errors.push('请输入有效的成本价');
+                if (isNaN(totalShares) || totalShares <= 0 || !Number.isInteger(totalShares)) errors.push('请输入有效的整数持有手数');
+                if (isNaN(currentPrice) || currentPrice <= 0) errors.push('请输入有效的现价');
+                if (isNaN(targetPrice) || targetPrice <= 0) errors.push('请输入有效的目标成本价');
+                if (errors.length > 0) {
+                    resultArea.classList.remove('visible');
+                    alert(errors.join('\n'));
+                    return;
+                }
+
+                const totalCost = costPrice * totalShares;
+                const currentMarketValue = currentPrice * totalShares;
+                const floatingPL = currentMarketValue - totalCost;
+
+                const denominator = currentPrice - targetPrice;
+                let canAchieve = true;
+                let errorMsg = '';
+                let tradeShares = null; // 最终选择的整数交易股数（正=卖出，负=买入）
+                let isSell = null;
+                let newCostPrice = null;
+                let newShares = null;
+                let newTotalCost = null;
+                let tradeAmount = null;
+                let floorResult = null;
+                let ceilResult = null;
+
+                if (Math.abs(denominator) < 1e-10) {
+                    if (Math.abs(costPrice - targetPrice) < 1e-10) {
+                        tradeShares = 0;
+                        isSell = null;
+                    } else {
+                        canAchieve = false;
+                        errorMsg = '现价等于目标成本价时，无法通过交易调整持仓成本（除非当前成本价已等于目标价）。';
+                    }
+                } else {
+                    const exactTrade = totalShares * (costPrice - targetPrice) / denominator;
+                    const absExact = Math.abs(exactTrade);
+                    const isSellExact = exactTrade > 0;
+
+                    // 候选整数股数（100的整数倍）
+                    const candidates = [];
+                    const exactLots = absExact / LOT_SIZE;
+                    const floorLots = Math.floor(exactLots);
+                    const ceilLots = Math.ceil(exactLots);
+                    const floorShares = floorLots * LOT_SIZE;
+                    const ceilShares = ceilLots * LOT_SIZE;
+
+                    if (floorShares >= 0) {
+                        if (isSellExact) {
+                            if (floorShares < totalShares) {
+                                candidates.push(floorShares);
+                            }
+                        } else {
+                            if (floorShares > 0) candidates.push(floorShares);
+                        }
+                    }
+                    if (ceilShares !== floorShares && ceilShares >= 0) {
+                        if (isSellExact) {
+                            if (ceilShares < totalShares) {
+                                candidates.push(ceilShares);
+                            }
+                        } else {
+                            if (ceilShares > 0) candidates.push(ceilShares);
+                        }
+                    }
+                    if (candidates.length === 0 && absExact < 0.5 * LOT_SIZE) {
+                        tradeShares = 0;
+                        isSell = null;
+                    } else if (candidates.length === 0) {
+                        canAchieve = false;
+                        if (isSellExact) {
+                            errorMsg = `需要卖出约 ${fmtLots(absExact, LOT_SIZE)} 手，但持有量不足或需卖出全部，无法实现整数操作。`;
+                        } else {
+                            errorMsg = `需要买入约 ${fmtLots(absExact, LOT_SIZE)} 手，但整数操作无法满足（可能需买入0手或超出范围）。`;
+                        }
+                    }
+
+                    if (candidates.length > 0) {
+                        // 评估每个候选，计算调整后的成本价与目标成本价的偏差
+                        const evaluated = candidates.map(c => {
+                            let newSharesTemp, newTotalCostTemp;
+                            if (isSellExact) {
+                                newSharesTemp = totalShares - c;
+                                newTotalCostTemp = totalCost - c * currentPrice;
+                            } else {
+                                newSharesTemp = totalShares + c;
+                                newTotalCostTemp = totalCost + c * currentPrice;
+                            }
+                            const newCP = newSharesTemp > 0 ? newTotalCostTemp / newSharesTemp : 0;
+                            return {
+                                shares: c,
+                                isSell: isSellExact,
+                                newCostPrice: newCP,
+                                newShares: newSharesTemp,
+                                newTotalCost: newTotalCostTemp,
+                                diff: Math.abs(newCP - targetPrice),
+                                tradeAmount: c * currentPrice
+                            };
+                        });
+
+                        // 按偏差排序
+                        evaluated.sort((a, b) => a.diff - b.diff);
+                        const best = evaluated[0];
+                        tradeShares = best.isSell ? best.shares : -best.shares;
+                        isSell = best.isSell;
+                        newCostPrice = best.newCostPrice;
+                        newShares = best.newShares;
+                        newTotalCost = best.newTotalCost;
+                        tradeAmount = best.tradeAmount;
+
+                        // 向下取整 / 向上取整方案
+                        const fValid = isSellExact ? (floorShares > 0 && floorShares < totalShares) : (floorShares > 0);
+                        const cValid = isSellExact ? (ceilShares > 0 && ceilShares < totalShares) : (ceilShares > 0);
+                        if (fValid) {
+                            floorResult = computeTradeResult(floorShares, isSellExact, totalShares, totalCost, currentPrice);
+                        }
+                        if (cValid && ceilShares !== floorShares) {
+                            ceilResult = computeTradeResult(ceilShares, isSellExact, totalShares, totalCost, currentPrice);
+                        }
+                    }
+                }
+
+                // 如果 tradeShares 为0，表示无需操作
+                if (tradeShares === 0 || (tradeShares !== null && Math.abs(tradeShares) < 1e-10)) {
+                    tradeShares = 0;
+                    isSell = null;
+                    newShares = totalShares;
+                    newTotalCost = totalCost;
+                    newCostPrice = costPrice;
+                    tradeAmount = 0;
+                }
+
+                // 渲染结果
+                renderResults({
+                    costPrice, totalShares, totalCost, currentPrice, targetPrice,
+                    floatingPL, currentMarketValue,
+                    tradeShares, isSell, canAchieve, errorMsg,
+                    newShares, newTotalCost, newCostPrice, tradeAmount,
+                    LOT_SIZE, floorResult, ceilResult
+                });
+
+                resultArea.classList.add('visible');
+                if (!isInitialCalc) {
+                    resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                isInitialCalc = false;
+            }
+
+            function renderResults(data) {
+                const {
+                    costPrice, totalShares, totalCost, currentPrice, targetPrice,
+                    floatingPL, currentMarketValue,
+                    tradeShares, isSell, canAchieve, errorMsg,
+                    newShares, newTotalCost, newCostPrice, tradeAmount,
+                    LOT_SIZE, floorResult, ceilResult
+                } = data;
+
+                const plClass = floatingPL >= 0 ? 'profit' : 'loss';
+                const plSign = floatingPL >= 0 ? '+' : '';
+                summaryRow.innerHTML = `
+                    <div class="summary-item">
+                        <div class="s-val">${fmtMoney(totalCost)} 元</div>
+                        <div class="s-label">持仓总成本</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="s-val">${fmtMoney(currentMarketValue)} 元</div>
+                        <div class="s-label">当前市值</div>
+                    </div>
+                    <div class="summary-item ${plClass}">
+                        <div class="s-val">${plSign}${fmtMoney(floatingPL)} 元</div>
+                        <div class="s-label">浮动盈亏</div>
+                    </div>
+                `;
+
+                if (!canAchieve) {
+                    actionCard.innerHTML = `
+                        <div class="action-title">⚠️ 无法达成</div>
+                        <div class="action-detail">${errorMsg}</div>
+                    `;
+                    actionCard.style.background = 'linear-gradient(135deg, #fffbfb 0%, #fff8f8 100%)';
+                    actionCard.style.borderColor = '#fecaca';
+                } else if (tradeShares === 0) {
+                    actionCard.innerHTML = `
+                        <div class="action-title">✅ 无需操作</div>
+                        <div class="action-detail">当前成本价已等于目标成本价 <strong>${fmtMoney(targetPrice)} 元</strong>，无需调整。</div>
+                    `;
+                    actionCard.style.background = 'linear-gradient(135deg, #f8fdf9 0%, #f9fefb 100%)';
+                    actionCard.style.borderColor = '#a7f3d0';
+                } else if (isSell) {
+                    const tradeLots = tradeShares / LOT_SIZE;
+                    actionCard.innerHTML = `
+                        <div class="action-title">📤 建议操作：卖出</div>
+                        <div class="action-main">
+                            <span class="action-badge badge-sell">卖出</span>
+                            <span class="action-detail">
+                                <strong>${fmtShares(tradeLots)} 手</strong><br>
+                                交易金额约：<strong>${fmtMoney(tradeAmount)} 元</strong>
+                            </span>
+                        </div>
+                        <div style="margin-top:10px;font-size:0.82rem;color:#8b6d20;line-height:1.5;">
+                            💡 以现价 <strong>${fmtMoney(currentPrice)} 元</strong> 卖出部分持仓，剩余持仓成本价将变为 <strong>${fmtMoney(newCostPrice)} 元</strong>。
+                        </div>
+                    `;
+                    actionCard.style.background = 'linear-gradient(135deg, #fefdf7 0%, #fffef9 100%)';
+                    actionCard.style.borderColor = '#f0e6c8';
+                } else {
+                    const buyShares = Math.abs(tradeShares);
+                    const buyLots = buyShares / LOT_SIZE;
+                    actionCard.innerHTML = `
+                        <div class="action-title">📥 建议操作：买入</div>
+                        <div class="action-main">
+                            <span class="action-badge badge-buy">买入</span>
+                            <span class="action-detail">
+                                <strong>${fmtShares(buyLots)} 手</strong><br>
+                                需要资金约：<strong>${fmtMoney(tradeAmount)} 元</strong>
+                            </span>
+                        </div>
+                        <div style="margin-top:10px;font-size:0.82rem;color:#5a6c3a;line-height:1.5;">
+                            💡 以现价 <strong>${fmtMoney(currentPrice)} 元</strong> 加仓买入，持仓成本价将变为 <strong>${fmtMoney(newCostPrice)} 元</strong>。
+                        </div>
+                    `;
+                    actionCard.style.background = 'linear-gradient(135deg, #f8fdf9 0%, #f9fefb 100%)';
+                    actionCard.style.borderColor = '#a7f3d0';
+                }
+
+                let optionsHTML = '';
+                if (floorResult || ceilResult) {
+                    optionsHTML = '<div class="options-row">';
+                    [floorResult, ceilResult].forEach((r, idx) => {
+                        if (!r) { optionsHTML += '<div></div>'; return; }
+                        const isBetter = tradeShares !== 0 && r.lots === Math.abs(Math.round(tradeShares / LOT_SIZE));
+                        const opLabel = idx === 0 ? '↓ 向下取整' : '↑ 向上取整';
+                        const opVerb = r.isSell ? '卖出' : '买入';
+                        const verbClass = r.isSell ? 'badge-sell' : 'badge-buy';
+                        optionsHTML += `
+                            <div class="option-card${isBetter ? ' better' : ''}">
+                                <div class="opt-label">${isBetter ? '★ 推荐 ' : ''}${opLabel}</div>
+                                <div class="opt-main" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                                    <span class="action-badge ${verbClass}" style="padding:2px 10px;font-size:0.82rem;">${opVerb} ${r.lots} 手</span>
+                                </div>
+                                <div class="opt-detail">
+                                    金额 ${fmtMoney(r.tradeAmount)} 元 · 新成本价 <strong>${fmtMoney(r.newCostPrice)} 元</strong>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    optionsHTML += '</div>';
+                }
+
+                optionsArea.innerHTML = optionsHTML;
+
+                if (canAchieve && newShares !== null) {
+                    previewCard.style.display = 'block';
+                    const newSharesLots = newShares / LOT_SIZE;
+                    const diffDisplay = newCostPrice !== null ? Math.abs(newCostPrice - targetPrice) : null;
+                    previewCard.innerHTML = `
+                        <h3>📋 调整后持仓预览（整数手操作）</h3>
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <div class="pv-label">新持仓数量</div>
+                                <div class="pv-val">${fmtShares(newSharesLots)} 手</div>
+                            </div>
+                            <div class="preview-item">
+                                <div class="pv-label">新总成本</div>
+                                <div class="pv-val">${fmtMoney(newTotalCost)} 元</div>
+                            </div>
+                            <div class="preview-item">
+                                <div class="pv-label">新成本价</div>
+                                <div class="pv-val highlight">${fmtMoney(newCostPrice)} 元</div>
+                            </div>
+                            <div class="preview-item">
+                                <div class="pv-label">目标成本价</div>
+                                <div class="pv-val" style="color:#e74c3c;">${fmtMoney(targetPrice)} 元</div>
+                            </div>
+                        </div>
+                        ${diffDisplay !== null && diffDisplay > 0.001 ? `
+                        <div style="font-size:0.8rem; margin-top:8px; color:#8b6d20;">
+                            ⚠️ 因整数限制，新成本价与目标相差约 <strong>${fmtMoney(diffDisplay)} 元</strong>
+                        </div>` : ''}
+                    `;
+                } else if (!canAchieve) {
+                    previewCard.style.display = 'none';
+                } else {
+                    previewCard.style.display = 'block';
+                    const totalLots = totalShares / LOT_SIZE;
+                    previewCard.innerHTML = `
+                        <h3>📋 持仓不变</h3>
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <div class="pv-label">持仓数量</div>
+                                <div class="pv-val">${fmtShares(totalLots)} 手</div>
+                            </div>
+                            <div class="preview-item">
+                                <div class="pv-label">当前成本价</div>
+                                <div class="pv-val highlight">${fmtMoney(costPrice)} 元</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let noteHTML = '';
+                if (canAchieve && tradeShares !== null && Math.abs(tradeShares) > 0) {
+                    const diffCP = Math.abs(newCostPrice - targetPrice);
+                    if (diffCP < 0.001) {
+                        noteHTML += `
+                            <div class="note-bar note-info">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b5998" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                <span>调整后可精确达到目标成本价 <strong>${fmtMoney(targetPrice)} 元</strong>。</span>
+                            </div>
+                        `;
+                    } else {
+                        noteHTML += `
+                            <div class="note-bar note-warning">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b6d20" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <span>因整数手限制，调整后成本价约 <strong>${fmtMoney(newCostPrice)} 元</strong>，与目标相差约 <strong>${fmtMoney(diffCP)} 元</strong>。</span>
+                            </div>
+                        `;
+                    }
+                }
+                if (!canAchieve) {
+                    noteHTML += `
+                        <div class="note-bar note-warning">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b6d20" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <span>${errorMsg}</span>
+                        </div>
+                    `;
+                }
+                noteArea.innerHTML = noteHTML;
+            }
+
+            btnCalc.addEventListener('click', calculate);
+            [costPriceInput, quantityInput, currentPriceInput, targetPriceInput].forEach(input => {
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); calculate(); }
+                });
+            });
+
+            // 预填示例（整数手数）
+            function prefillExample() {
+                costPriceInput.value = '10';
+                quantityInput.value = '10';
+                currentPriceInput.value = '12';
+                targetPriceInput.value = '9';
+            }
+            prefillExample();
+            setTimeout(calculate, 300);
+        })();
+    </script>
+</body>
+</html>
